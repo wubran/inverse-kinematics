@@ -87,28 +87,43 @@ function refresh(){
 }
 
 
-function transform(vect, useA){ //uses the testmatrix
-    let outMatrix = [0,0,0];
-    if(useA){
-        outMatrix.push(0);
-    }
-    for(let i=0; i<outMatrix.length; i++){ 
-        outMatrix[i] = (vect[0]*testMatrix[0][i]+vect[1]*testMatrix[1][i]+vect[2]*testMatrix[2][i]+((useA)?(vect[3]*testMatrix[3][i]):0));
-    }
-    return outMatrix;
+function go(x,y,z,a,b,c,r){
+    theArm.targetPoint.pos = [x,y,z];
+    theArm.targetVect = [a,b,c];
+    theArm.inverseKinematics();
 }
 
 xcenter = canvas.width/2;
+ycenter = 2*canvas.height/3
+dotradius = 4;
+drawFlag = false;
 function do3Dcanvases(){
     ctx.fillStyle="black";
     ctx.fillRect(0,0,canvas.width,canvas.height);
     camera.update();
     draworigin();
+    theArm.drawVects();
 }
 
 do3Dcanvases();
 setInterval(function(){ //the big loop
-    if(butt==2){
+    if(drawFlag || butt==2){
         do3Dcanvases();
+        drawFlag = false;
     }
 }, 1000/60);
+
+
+/*
+        setInterval(()=>{
+            wristYaw.theta+=0.01;
+            theArm.forwardKinematics();
+        },20)
+
+*/
+
+let innie = 0;
+setInterval(()=>{
+    innie+=0.01;
+    go(5*Math.cos(innie),5*Math.sin(innie),4+2*Math.sin(4*innie),0,0,-1,0);
+},20)

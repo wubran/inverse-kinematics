@@ -3,6 +3,10 @@ var inputs = document.getElementsByTagName("input");
 
 var randButton = document.getElementById("randButton");
 randButton.onclick = function(){
+  for(let i=0; i<theArm.joints.length; i++){
+    theArm.joints[i].theta = Math.PI*Math.random();
+  }
+  theArm.forwardKinematics();
 }
 
 function preventDefaults (e) {
