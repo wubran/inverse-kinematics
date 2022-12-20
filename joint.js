@@ -4,6 +4,7 @@ class Arm{
     constructor(...joints){
         this.joints = joints;
         this.sphereRad = joints[4].boneLength + joints[5].boneLength;
+        // this.sphereRad = 0;
 
         let posAccumulator = [0,0,0];
         for(let i=0; i<joints.length; i++){ // calculate default positions based off of default bones
@@ -15,7 +16,8 @@ class Arm{
         }
         this.endPoint = new Point(...posAccumulator,"white");
         this.targetPoint = new Point(...posAccumulator,"white");
-        this.targetVect = [0,0,1]
+        this.targetVect = [0,0,1];
+        this.twist = 0;
         this.forwardKinematics();
     }
     inEnvelope(x,y,z,a,b,c,r){
@@ -33,19 +35,58 @@ class Arm{
             this.joints[0].theta+=Math.PI;
         }
 
-        this.joints[2].theta = Math.PI - 2*Math.asin(0.5*Math.sqrt((spherePivot[0]-this.joints[1].truePP.pos[0])*(spherePivot[0]-this.joints[1].truePP.pos[0])+(spherePivot[1]-this.joints[1].truePP.pos[1])*(spherePivot[1]-this.joints[1].truePP.pos[1])+(spherePivot[2]-this.joints[1].truePP.pos[2])*(spherePivot[2]-this.joints[1].truePP.pos[2]))/5);  // assume isosceles length of L
+        // elbow joint = Math.PI - 2*Math.asin(r/(2L))
+        // pi - 2asinx <==> 2acosx
+        let rVect = [spherePivot[0]-this.joints[1].truePP.pos[0], spherePivot[1]-this.joints[1].truePP.pos[1], spherePivot[2]-this.joints[1].truePP.pos[2]]
 
+        this.joints[2].theta = 2*Math.acos(Math.sqrt(rVect[0]*rVect[0]+rVect[1]*rVect[1]+rVect[2]*rVect[2])/14);  // assume isosceles length of L
+        
         // normal of the elbow plane is perpendicular to x,y component of spherePivot, and no z component
         // nevermind, just rotate around the z axis
-        let targ2d = [Math.sqrt(spherePivot[0]*spherePivot[0] + spherePivot[1]*spherePivot[1]),spherePivot[2]];
+        let targ2d = [Math.sqrt(rVect[0]*rVect[0] + rVect[1]*rVect[1]),rVect[2]];
         this.joints[1].theta = Math.atan(targ2d[1]/targ2d[0]);
         if(targ2d[0]<0){
             this.joints[1].theta+=Math.PI;
         }
-        this.joints[1].theta-=(Math.PI-this.joints[2].theta)/2
+        this.joints[1].theta-=(Math.PI-this.joints[2].theta)/2;
+        this.joints[1].theta*=-1;
 
-        
+        // dot(pointingVector, plane normal) = cos(theta)
         this.forwardKinematics();
+
+        let ontoWrist = this.projPlane(this.normalize(this.joints[2].trueBone),dir);
+        this.joints[3].theta = Math.acos(this.dot3d(ontoWrist,this.normalize([rVect[1],-rVect[0],0])));
+        //must compare to 90 degree offset for reflex angles:
+        let negator = this.dot3d(ontoWrist,this.normalize([this.joints[2].trueBone[0],this.joints[2].trueBone[1],-1/this.joints[2].trueBone[2]]));
+        // console.log(negator);
+        if(negator > 0){ // angle is greater than PI
+            this.joints[3].theta = 2*Math.PI - this.joints[3].theta;
+        }
+
+        // this.forwardKinematics();
+        // project dir onto plane normal to elbow bone, then do right triangle trig
+        // let blue2d = this.projPlane(this.normalize(this.joints[2].trueBone), dir)
+        // this.joints[3].theta = Math.atan(blue2d[1]/blue2d[0]);
+        // if(blue2d[1]<0){
+        //     this.joints[3].theta+=Math.PI;
+        // }
+        // blue2d.push(0);
+        // debugVector = blue2d;
+
+        // this.joints[3].theta*=-1;
+
+        this.joints[4].theta = Math.acos(this.dot3d(dir,this.normalize(this.joints[2].trueBone)));
+        let negator2 = this.dot3d(dir,ontoWrist);
+        if(negator2 < 0){ // angle is greater than PI
+            this.joints[4].theta = 2*Math.PI - this.joints[4].theta;
+        }
+        
+        this.joints[5].theta = this.twist;
+
+        this.forwardKinematics();
+
+        // console.log(Math.hypot(...this.subtractVectors(spherePivot,this.joints[1].truePP.pos)),Math.sqrt((spherePivot[0]-this.joints[1].truePP.pos[0])*(spherePivot[0]-this.joints[1].truePP.pos[0])+(spherePivot[1]-this.joints[1].truePP.pos[1])*(spherePivot[1]-this.joints[1].truePP.pos[1])+(spherePivot[2]-this.joints[1].truePP.pos[2])*(spherePivot[2]-this.joints[1].truePP.pos[2])))
+
     }
     linearMove(x,y,z,a,b,c,r){
 
@@ -79,7 +120,7 @@ class Arm{
         //     point[1] - norm[1]*dotted,
         //     point[2] - norm[2]*dotted,
         // ]
-        return [point[0] - norm[0]*dotted,point[1] - norm[1]*dotted];
+        return [point[0] - norm[0]*dotted,point[1] - norm[1]*dotted,point[2] - norm[2]*dotted];
     }
     dot3d(a, b) { // only for 3d
         return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
@@ -146,6 +187,9 @@ class Arm{
         for(let i=0; i<this.joints.length; i++){
             this.joints[i].truePP.project(camera);
             this.joints[i].truePP.draw();
+            ctx.fillStyle = this.joints[i].truePP.color;
+            ctx.font = "14px Arial";
+            ctx.fillText(Math.round(this.joints[i].theta*100)/100,this.joints[i].truePP.x+20, this.joints[i].truePP.y);
         }
         for(let i=0; i<this.joints.length-1; i++){
             ctx.strokeStyle = this.joints[i].truePP.color;
@@ -189,9 +233,9 @@ class JointBone{
 }
 
 var baseVect = new JointBone([0,0,1],[0,0,2],undefined,"red"); // base joint, 0 is the x-axis
-var shoulder = new JointBone([0,1,0],[0,0,5],undefined,"orange"); // shoulder and upper arm
-var elbow = new JointBone([0,1,0],[0,0,4],undefined,"yellow"); // elbow and lower arm
+var shoulder = new JointBone([0,1,0],[0,0,7],undefined,"orange"); // shoulder and upper arm
+var elbow = new JointBone([0,1,0],[0,0,6],undefined,"yellow"); // elbow and lower arm
 var wristRoll = new JointBone([0,0,1],[0,0,1],undefined,"lime"); // wrist turns
-var wristYaw = new JointBone([1,0,0],[0,0,1],undefined,"teal"); // wrist rocks back and forth
+var wristYaw = new JointBone([1,0,0],[0,0,1],undefined,"aqua"); // wrist rocks back and forth
 var wristTwist = new JointBone([0,0,1],[0,0,1],undefined,"fuchsia"); // secondary wrist turn
 var theArm = new Arm(baseVect,shoulder,elbow,wristRoll,wristYaw,wristTwist);

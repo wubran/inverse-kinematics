@@ -90,6 +90,7 @@ function refresh(){
 function go(x,y,z,a,b,c,r){
     theArm.targetPoint.pos = [x,y,z];
     theArm.targetVect = [a,b,c];
+    theArm.twist = r;
     theArm.inverseKinematics();
 }
 
@@ -104,12 +105,15 @@ function do3Dcanvases(){
     draworigin();
     theArm.drawVects();
 }
+let pause = false;
 
+let debugVector = [];
 do3Dcanvases();
 setInterval(function(){ //the big loop
     if(drawFlag || butt==2){
         do3Dcanvases();
         drawFlag = false;
+        drawVector(debugVector,"khaki");
     }
 }, 1000/60);
 
@@ -122,8 +126,28 @@ setInterval(function(){ //the big loop
 
 */
 
+// debug tools:
+
 let innie = 0;
 setInterval(()=>{
-    innie+=0.01;
-    go(5*Math.cos(innie),5*Math.sin(innie),4+2*Math.sin(4*innie),0,0,-1,0);
+    if(pause){
+        return;
+    }
+    innie+=0.005;
+    // go(5*Math.cos(innie),5*Math.sin(innie),4+2*Math.sin(4*innie),0,0,-1,0);
+    // go(7*Math.cos(innie),7*Math.sin(innie),5,0,0,-1,0); // plain circle
+    // go(5*Math.cos(innie),5*Math.sin(innie),4+4*Math.sin(4*innie),0,0,-1,0); // merry go round
+    // go(5*Math.cos(innie),5*Math.sin(innie),4+4*Math.sin(4*innie),Math.cos(innie)*Math.cos(12*innie),Math.sin(innie)*Math.cos(12*innie),Math.sin(12*innie),0); //torus
+    // go(5,5,4+4*Math.sin(innie),Math.cos(8*innie),Math.sin(8*innie),-1,0); // spin around point moving in vertical line
+    // go(4*Math.cos(innie),1,4+4*Math.sin(innie),0,0,-1,0); // vertical circle
+    // go(5,5,5,Math.cos(12*innie),Math.sin(12*innie),Math.sin(innie),0); //point demo
+    go(5,5,5,Math.cos(innie*5)*Math.cos(12*innie),Math.sin(innie*5)*Math.cos(12*innie),Math.sin(12*innie),0);
+
+
 },20)
+
+function drawVector(vect,color="white"){
+    let p = new Point(...vect,color);
+    p.project(camera);
+    p.draw();
+}

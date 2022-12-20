@@ -50,3 +50,17 @@ function onMouseMove(event){
 function onMouseLeave(event){
     butt = -1;
 }
+
+document.addEventListener('keydown', (event) => {
+  const keyName = event.key;
+  switch(keyName){
+      case 'Control':
+          return;
+      case 'Escape':
+
+          return;
+      case ' ':
+          pause = !pause;
+          return;
+  }
+}, false);
