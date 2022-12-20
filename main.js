@@ -96,7 +96,7 @@ function go(x,y,z,a,b,c,r){
 
 xcenter = canvas.width/2;
 ycenter = 2*canvas.height/3
-dotradius = 4;
+dotradius = 2.5;
 drawFlag = false;
 function do3Dcanvases(){
     ctx.fillStyle="black";
@@ -107,13 +107,25 @@ function do3Dcanvases(){
 }
 let pause = false;
 
-let debugVector = [];
+let debugVector1 = [];
+let debugVector2 = [];
+let debugVector3 = [];
+let debugVector4 = [];
+let debugVector5 = [];
+let debugVector6 = [];
+
 do3Dcanvases();
 setInterval(function(){ //the big loop
     if(drawFlag || butt==2){
         do3Dcanvases();
         drawFlag = false;
-        drawVector(debugVector,"khaki");
+        // drawVector(theArm.joints[3].truePP.pos,debugVector1,"khaki",3);
+        // drawVector(theArm.joints[3].truePP.pos,debugVector2,"lightBlue",3);
+        // drawVector(theArm.joints[3].truePP.pos,debugVector3,"white",3);
+
+        // drawVector(theArm.joints[4].truePP.pos,debugVector4,"khaki", 3);
+        // drawVector(theArm.joints[4].truePP.pos,debugVector5,"lightBlue", 3);
+        // drawVector(theArm.joints[4].truePP.pos,debugVector6,"white", 3);
     }
 }, 1000/60);
 
@@ -133,21 +145,27 @@ setInterval(()=>{
     if(pause){
         return;
     }
-    innie+=0.005;
+    innie+=0.01;
     // go(5*Math.cos(innie),5*Math.sin(innie),4+2*Math.sin(4*innie),0,0,-1,0);
     // go(7*Math.cos(innie),7*Math.sin(innie),5,0,0,-1,0); // plain circle
     // go(5*Math.cos(innie),5*Math.sin(innie),4+4*Math.sin(4*innie),0,0,-1,0); // merry go round
-    // go(5*Math.cos(innie),5*Math.sin(innie),4+4*Math.sin(4*innie),Math.cos(innie)*Math.cos(12*innie),Math.sin(innie)*Math.cos(12*innie),Math.sin(12*innie),0); //torus
     // go(5,5,4+4*Math.sin(innie),Math.cos(8*innie),Math.sin(8*innie),-1,0); // spin around point moving in vertical line
     // go(4*Math.cos(innie),1,4+4*Math.sin(innie),0,0,-1,0); // vertical circle
     // go(5,5,5,Math.cos(12*innie),Math.sin(12*innie),Math.sin(innie),0); //point demo
-    go(5,5,5,Math.cos(innie*5)*Math.cos(12*innie),Math.sin(innie*5)*Math.cos(12*innie),Math.sin(12*innie),0);
-
+    // go(5,5,5,Math.cos(innie*5)*Math.cos(12*innie),Math.sin(innie*5)*Math.cos(12*innie),Math.sin(12*innie),0);
+    go(4,8*Math.cos(innie),4,Math.cos(innie*8),0,Math.sin(8*innie),0);
 
 },20)
 
-function drawVector(vect,color="white"){
-    let p = new Point(...vect,color);
+function drawVector(point,vect,color,scale){
+    let p = new Point(...point,color);
+    let v = new Point(point[0]+scale*vect[0],point[1]+scale*vect[1],point[2]+scale*vect[2],color);
     p.project(camera);
-    p.draw();
+    v.project(camera);
+    // p.draw();
+    ctx.beginPath()
+    ctx.strokeStyle = color;
+    ctx.moveTo(p.x,p.y);
+    ctx.lineTo(v.x,v.y);
+    ctx.stroke();
 }

@@ -54,13 +54,21 @@ function onMouseLeave(event){
 document.addEventListener('keydown', (event) => {
   const keyName = event.key;
   switch(keyName){
-      case 'Control':
-          return;
-      case 'Escape':
+    case 'Control':
+      return;
+    case 'Escape':
 
-          return;
-      case ' ':
-          pause = !pause;
-          return;
+      return;
+    case 'ArrowUp':
+      theArm.targetPoint.pos[2]+=0.5;
+      theArm.inverseKinematics();
+      return;
+    case 'ArrowDown':
+      theArm.targetPoint.pos[2]-=0.5;
+      theArm.inverseKinematics();
+      return;
+    case ' ':
+      pause = !pause;
+      return;
   }
 }, false);

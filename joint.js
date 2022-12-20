@@ -4,6 +4,7 @@ class Arm{
     constructor(...joints){
         this.joints = joints;
         this.sphereRad = joints[4].boneLength + joints[5].boneLength;
+        this.isoLeg = 7;
         // this.sphereRad = 0;
 
         let posAccumulator = [0,0,0];
@@ -39,7 +40,7 @@ class Arm{
         // pi - 2asinx <==> 2acosx
         let rVect = [spherePivot[0]-this.joints[1].truePP.pos[0], spherePivot[1]-this.joints[1].truePP.pos[1], spherePivot[2]-this.joints[1].truePP.pos[2]]
 
-        this.joints[2].theta = 2*Math.acos(Math.sqrt(rVect[0]*rVect[0]+rVect[1]*rVect[1]+rVect[2]*rVect[2])/14);  // assume isosceles length of L
+        this.joints[2].theta = 2*Math.acos(Math.sqrt(rVect[0]*rVect[0]+rVect[1]*rVect[1]+rVect[2]*rVect[2])/(2*this.isoLeg));  // assume isosceles length of L
         
         // normal of the elbow plane is perpendicular to x,y component of spherePivot, and no z component
         // nevermind, just rotate around the z axis
@@ -55,13 +56,19 @@ class Arm{
         this.forwardKinematics();
 
         let ontoWrist = this.projPlane(this.normalize(this.joints[2].trueBone),dir);
-        this.joints[3].theta = Math.acos(this.dot3d(ontoWrist,this.normalize([rVect[1],-rVect[0],0])));
+        let planeNorm = this.normalize([rVect[1],-rVect[0],0]);
+        this.joints[3].theta = Math.acos(this.dot3d(this.normalize(ontoWrist),planeNorm));
         //must compare to 90 degree offset for reflex angles:
-        let negator = this.dot3d(ontoWrist,this.normalize([this.joints[2].trueBone[0],this.joints[2].trueBone[1],-1/this.joints[2].trueBone[2]]));
-        // console.log(negator);
-        if(negator > 0){ // angle is greater than PI
+        // let negator = this.dot3d(ontoWrist,this.normalize([this.joints[2].trueBone[0],this.joints[2].trueBone[1],-1/this.joints[2].trueBone[2]]));
+        let negator = this.dot3d(ontoWrist,this.crossProduct(this.joints[2].trueBone,planeNorm));
+
+        if(negator < 0){ // angle is greater than PI
             this.joints[3].theta = 2*Math.PI - this.joints[3].theta;
         }
+
+        debugVector1 = ontoWrist;
+        debugVector2 = planeNorm;
+        debugVector3 = this.crossProduct(this.joints[2].trueBone,planeNorm);
 
         // this.forwardKinematics();
         // project dir onto plane normal to elbow bone, then do right triangle trig
@@ -80,10 +87,14 @@ class Arm{
         if(negator2 < 0){ // angle is greater than PI
             this.joints[4].theta = 2*Math.PI - this.joints[4].theta;
         }
-        
+        // console.log(Math.round(negator*1000)/1000, Math.round(negator2*1000)/1000);
         this.joints[5].theta = this.twist;
 
         this.forwardKinematics();
+
+        debugVector4 = this.normalize(this.joints[2].trueBone);
+        debugVector5 = dir;
+        debugVector6 = ontoWrist;
 
         // console.log(Math.hypot(...this.subtractVectors(spherePivot,this.joints[1].truePP.pos)),Math.sqrt((spherePivot[0]-this.joints[1].truePP.pos[0])*(spherePivot[0]-this.joints[1].truePP.pos[0])+(spherePivot[1]-this.joints[1].truePP.pos[1])*(spherePivot[1]-this.joints[1].truePP.pos[1])+(spherePivot[2]-this.joints[1].truePP.pos[2])*(spherePivot[2]-this.joints[1].truePP.pos[2])))
 
